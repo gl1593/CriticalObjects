@@ -1,0 +1,84 @@
+var serial;          // variable to hold an instance of the serialport library
+var portName = '/dev/tty.usbmodem14201'; // fill in your serial port name here
+var inData;                            // for incoming serial data
+var spin = 1;                       // for outgoing data
+var spinback = 0;
+
+var hey = 0;  //counter for hey
+var back = 0; //counter for back
+
+var lastmillis = 0;
+var currentmillis = 0;
+
+function setup() {
+
+  noCanvas();
+  
+  serial = new p5.SerialPort();    // make a new instance of the serialport library
+ serial.on('data', serialEvent);  // callback for when new data arrives
+ serial.on('error', serialError); // callback for errors
+ serial.open(portName);           // open a serial port
+  
+  let speechRec = new p5.SpeechRec('en-US', gotSpeech);
+  
+  let continuous = true;
+  let interim = true;
+  speechRec.start(continuous, interim);
+  
+  function gotSpeech(){
+  if(speechRec.resultValue){
+    createP(speechRec.resultString);
+    lastmillis = millis();
+    
+    console.log(speechRec.resultString.indexOf("hey"));
+    
+    
+    
+    if(speechRec.resultString.indexOf("hey") == 0 || speechRec.resultString.indexOf("Hey") == 0){
+        hey++;
+        // console.log("hey");
+
+        if(hey == 1){
+          console.log("spin");
+          serial.write(spin);
+          back = 0;
+        }
+      
+      }
+    }
+  
+  }
+}
+
+function draw(){
+  
+  currentmillis = millis();
+  if(currentmillis - lastmillis > 5000 && lastmillis !== 0 && back == 0){
+        back++;
+        console.log("back");
+        serial.write(spinback);
+        hey = 0;
+  }
+  
+}
+
+function serialEvent() {
+ // read a byte from the serial port:
+ var inByte = serial.read();
+ // store it in a global variable:
+ inData = inByte;
+}
+ 
+function serialError(err) {
+  println('Something went wrong with the serial port. ' + err);
+}
+
+// get the list of ports:
+function printList(portList) {
+  for (var i = 0; i < portList.length; i++) {
+    // Display the list the console:
+    print(i + " " + portList[i]);
+  }
+}
+
+
